@@ -25,14 +25,17 @@ Aplicación local de análisis de trading que combina datos reales de mercado, a
 
 ### Python
 
+Compatible con Python 3.12 y 3.14. En Windows se recomienda usar siempre `python -m pip` y `python -m uvicorn` para garantizar que los comandos se ejecuten dentro del entorno virtual activo.
+
 ```bash
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
 # macOS/Linux
 source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
 ```
 
 Abre `http://127.0.0.1:8000`.
