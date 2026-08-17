@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trading Intelligence</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090d14;--panel:#111827;--muted:#94a3b8;--line:#263244;--good:#22c55e;--bad:#ef4444;--wait:#eab308}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#e5e7eb}.wrap{max-width:1200px;margin:auto;padding:24px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.top{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.muted{color:var(--muted)}input,select,button{background:#0b1220;color:#e5e7eb;border:1px solid var(--line);border-radius:10px;padding:10px 12px}button{cursor:pointer;font-weight:700}.section{margin-top:18px}.big{font-size:28px;font-weight:800}.buy{color:var(--good)}.sell{color:var(--bad)}.wait{color:var(--wait)}.warning{background:#3a2f07;border:1px solid #705d0a;padding:10px;border-radius:10px;margin-top:8px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left}.row{display:flex;gap:12px;flex-wrap:wrap}.row label{display:flex;flex-direction:column;gap:5px}.check{display:flex!important;flex-direction:row!important;align-items:center}.error{background:#3b1010;border:1px solid #7f1d1d;padding:12px;border-radius:10px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Trading Intelligence</h1>
+  <p class="muted">Análisis técnico multitemporal, noticias, macro, sentimiento, psicología y riesgo con datos reales.</p>
+  <div class="card top">
+    <label>Símbolo<br><input id="symbol" value="BTC-USD"></label>
+    <label>Capital<br><input id="capital" type="number" value="10000"></label>
+    <label>Perfil<br><select id="profile"><option value="conservador">Conservador</option><option value="moderado" selected>Moderado</option><option value="agresivo">Agresivo</option></select></label>
+    <button id="analyze">Analizar</button>
+  </div>
+  <div class="card section">
+    <h3>Psicología del trader</h3>
+    <div class="row">
+      <label class="check"><input id="fomo" type="checkbox">FOMO</label><label class="check"><input id="confirm" type="checkbox">Confirmación</label><label class="check"><input id="revenge" type="checkbox">Revenge trading</label><label class="check"><input id="overconf" type="checkbox">Exceso de confianza</label>
+      <label>Miedo<input id="fear" type="number" min="0" max="100" value="30"></label><label>Avaricia<input id="greed" type="number" min="0" max="100" value="30"></label><label>Disciplina<input id="discipline" type="number" min="0" max="100" value="70"></label>
+    </div>
+  </div>
+  <div id="error" class="error section" style="display:none"></div>
+  <div id="result" style="display:none">
+    <div class="grid section"><div class="card"><small>Decisión</small><div id="decision" class="big"></div></div><div class="card"><small>Confianza</small><div id="confidence" class="big"></div></div><div class="card"><small>Score institucional</small><div id="score" class="big"></div></div><div class="card"><small>Precio</small><div id="price" class="big"></div></div></div>
+    <div id="components" class="grid section"></div>
+    <div class="grid section"><div class="card"><h3>Plan de riesgo</h3><div id="risk"></div></div><div class="card"><h3>Régimen</h3><div id="regime"></div></div></div>
+    <div class="card section"><h3>Justificación</h3><div id="rationale"></div><div id="warnings"></div><h4>Escenario alternativo</h4><p id="alternative"></p></div>
+    <div class="card section"><h3>Temporalidades</h3><div id="timeframes"></div></div>
+    <div class="card section"><h3>Noticias</h3><div id="news"></div></div>
+    <div class="grid section"><div class="card"><h3>Backtest</h3><button id="loadBacktest">Cargar 5 años</button><pre id="backtest" class="mono"></pre></div><div class="card"><h3>Correlaciones</h3><button id="loadCorr">Cargar</button><pre id="corr" class="mono"></pre></div></div>
+  </div>
+  <p class="muted section">Uso educativo y de investigación. No constituye asesoramiento financiero.</p>
+</div>
+<script>
+let lastSymbol='BTC-USD'; const $=id=>document.getElementById(id); const fmt=x=>x==null?'—':Number(x).toLocaleString(undefined,{maximumFractionDigits:6});
+function component(name,c){const cls=c.score>15?'buy':c.score<-15?'sell':'wait';return `<div class="card"><small>${name}</small><div class="big ${cls}">${c.score>0?'+':''}${c.score}</div><div>${c.label}</div></div>`}
+async function analyze(){
+ $('error').style.display='none';
+ const body={symbol:$('symbol').value.trim(),capital:Number($('capital').value),risk_profile:$('profile').value,psychology:{fomo:$('fomo').checked,confirmation_bias:$('confirm').checked,revenge_trading:$('revenge').checked,overconfidence:$('overconf').checked,fear_level:Number($('fear').value),greed_level:Number($('greed').value),discipline_level:Number($('discipline').value)}};
+ try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Error de análisis');lastSymbol=d.symbol;$('result').style.display='block';$('decision').textContent=d.decision;$('decision').className='big '+(d.decision==='COMPRAR'?'buy':d.decision==='VENDER'?'sell':'wait');$('confidence').textContent=d.confidence+'%';$('score').textContent=d.institutional_score;$('price').textContent=fmt(d.price);$('components').innerHTML=component('Técnico',d.technical)+component('Macro',d.fundamental_macro)+component('Noticias',d.news)+component('Sentimiento',d.sentiment)+component('Psicología',d.psychology);const k=d.risk;$('risk').innerHTML=`<table><tr><td>Entrada</td><td>${fmt(k.entry)}</td></tr><tr><td>Stop</td><td>${fmt(k.stop_loss)}</td></tr><tr><td>TP1</td><td>${fmt(k.take_profit_1)}</td></tr><tr><td>TP2</td><td>${fmt(k.take_profit_2)}</td></tr><tr><td>R:R</td><td>${k.risk_reward?'1 : '+k.risk_reward:'—'}</td></tr><tr><td>Riesgo</td><td>${k.risk_percent}%</td></tr><tr><td>Pérdida máxima</td><td>$${fmt(k.max_loss)}</td></tr><tr><td>Tamaño</td><td>${fmt(k.position_size)}</td></tr></table>`;$('regime').innerHTML=`<p><b>${d.market_regime}</b></p><p>Probabilidad histórica: <b>${d.historical_probability==null?'muestra insuficiente':d.historical_probability+'%'}</b></p>`;$('rationale').innerHTML=Object.entries(d.rationale).map(([a,b])=>`<p><b>${a}</b>: ${b}</p>`).join('');$('warnings').innerHTML=d.warnings.map(w=>`<div class="warning">⚠ ${w}</div>`).join('');$('alternative').textContent=d.alternative_scenario;const tf=d.technical.details.timeframes;$('timeframes').innerHTML='<table><tr><th>TF</th><th>Score</th><th>Tendencia</th><th>RSI</th><th>ADX</th><th>Soporte</th><th>Resistencia</th></tr>'+Object.entries(tf).map(([n,v])=>`<tr><td>${n}</td><td>${v.score}</td><td>${v.label}</td><td>${v.rsi??'—'}</td><td>${v.adx??'—'}</td><td>${fmt(v.support)}</td><td>${fmt(v.resistance)}</td></tr>`).join('')+'</table>';$('news').innerHTML=(d.news.details.articles||[]).map(n=>`<p><b>${n.title}</b><br><span class="muted">${n.publisher} · ${n.relevance} · sentimiento ${n.sentiment}</span></p>`).join('')||'<p>Sin noticias disponibles.</p>'}catch(e){$('error').textContent=e.message;$('error').style.display='block'}
+}
+$('analyze').onclick=analyze;$('loadBacktest').onclick=async()=>{const r=await fetch('/api/backtest/'+encodeURIComponent(lastSymbol));$('backtest').textContent=JSON.stringify(await r.json(),null,2)};$('loadCorr').onclick=async()=>{const r=await fetch('/api/correlations/'+encodeURIComponent(lastSymbol));$('corr').textContent=JSON.stringify(await r.json(),null,2)};analyze();
+</script>
+</body>
+</html>
