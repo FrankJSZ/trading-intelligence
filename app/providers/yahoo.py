@@ -9,25 +9,73 @@ import pandas as pd
 
 
 class YahooProvider:
-    """Keyless Yahoo Finance provider for market candles and headlines."""
+    """Keyless Yahoo Finance provider for market candles and headlines.
 
-    BASE_CHART = "https://query1.finance.yahoo.com/v8/finance/chart"
-    SEARCH = "https://query1.finance.yahoo.com/v1/finance/search"
+    Yahoo's chart/search endpoints are internal and can occasionally be blocked,
+    rate-limited, or fail DNS resolution on a specific host. We therefore try
+    both query1 and query2 and retry once without proxy-related environment
+    variables when a connection-level failure occurs.
+    """
+
+    HOSTS = (
+        "https://query1.finance.yahoo.com",
+        "https://query2.finance.yahoo.com",
+    )
 
     def __init__(self, timeout: float = 15.0):
         self.timeout = timeout
         self.headers = {
-            "User-Agent": "Mozilla/5.0 TradingIntelligence/1.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 TradingIntelligence/1.0",
             "Accept": "application/json,text/plain,*/*",
         }
 
+    async def _get_json(self, path: str, params: dict) -> dict:
+        attempts: list[str] = []
+
+        # First respect the user's normal proxy/environment configuration. If a
+        # stale HTTP(S)_PROXY variable is the cause of getaddrinfo failures,
+        # retry directly with trust_env=False.
+        for trust_env in (True, False):
+            mode = "environment" if trust_env else "direct"
+            for host in self.HOSTS:
+                url = f"{host}{path}"
+                try:
+                    async with httpx.AsyncClient(
+                        timeout=self.timeout,
+                        headers=self.headers,
+                        trust_env=trust_env,
+                        follow_redirects=True,
+                    ) as client:
+                        response = await client.get(url, params=params)
+                        response.raise_for_status()
+                        return response.json()
+                except httpx.HTTPStatusError as exc:
+                    status = exc.response.status_code
+                    attempts.append(f"{host} [{mode}] HTTP {status}")
+                    # Try Yahoo's alternate hostname for transient/blocking errors.
+                    if status in {401, 403, 404, 408, 429, 500, 502, 503, 504}:
+                        continue
+                    raise
+                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
+                    attempts.append(f"{host} [{mode}] {exc}")
+                    continue
+                except httpx.RequestError as exc:
+                    attempts.append(f"{host} [{mode}] {exc}")
+                    continue
+
+        detail = "; ".join(attempts[-4:]) or "no connection attempts completed"
+        raise ConnectionError(
+            "No se pudo conectar con Yahoo Finance. "
+            "Esto suele indicar un problema de DNS, proxy, VPN, firewall o bloqueo de red. "
+            f"Intentos: {detail}. "
+            "En Windows prueba: nslookup query1.finance.yahoo.com y "
+            "nslookup query2.finance.yahoo.com."
+        )
+
     async def candles(self, symbol: str, interval: str, range_: str) -> pd.DataFrame:
-        url = f"{self.BASE_CHART}/{quote(symbol, safe='')}"
+        encoded = quote(symbol, safe="")
         params = {"interval": interval, "range": range_, "includePrePost": "false"}
-        async with httpx.AsyncClient(timeout=self.timeout, headers=self.headers) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            payload = response.json()
+        payload = await self._get_json(f"/v8/finance/chart/{encoded}", params)
 
         result = payload.get("chart", {}).get("result")
         if not result:
@@ -77,10 +125,7 @@ class YahooProvider:
 
     async def news(self, symbol: str, count: int = 20) -> list[dict]:
         params = {"q": symbol, "quotesCount": 1, "newsCount": count, "enableFuzzyQuery": "false"}
-        async with httpx.AsyncClient(timeout=self.timeout, headers=self.headers) as client:
-            response = await client.get(self.SEARCH, params=params)
-            response.raise_for_status()
-            payload = response.json()
+        payload = await self._get_json("/v1/finance/search", params)
 
         articles = []
         for item in payload.get("news", []):
