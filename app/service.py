@@ -57,4 +57,5 @@ class TradingAnalysisService:
         return {"symbol": symbol.upper(), **run_backtest(frame)}
 
     async def correlation(self, symbol: str) -> dict:
-        return {"symbol": symbol.upper(), "correlations": await correlations(self.provider, symbol.upper())}
+        payload = await correlations(self.provider, symbol.upper())
+        return {"symbol": symbol.upper(), **payload}
