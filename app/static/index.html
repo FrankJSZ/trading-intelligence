@@ -5,47 +5,485 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trading Intelligence</title>
   <style>
-    :root{color-scheme:dark;--bg:#090d14;--panel:#111827;--muted:#94a3b8;--line:#263244;--good:#22c55e;--bad:#ef4444;--wait:#eab308}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#e5e7eb}.wrap{max-width:1200px;margin:auto;padding:24px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.top{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.muted{color:var(--muted)}input,select,button{background:#0b1220;color:#e5e7eb;border:1px solid var(--line);border-radius:10px;padding:10px 12px}button{cursor:pointer;font-weight:700}.section{margin-top:18px}.big{font-size:28px;font-weight:800}.buy{color:var(--good)}.sell{color:var(--bad)}.wait{color:var(--wait)}.warning{background:#3a2f07;border:1px solid #705d0a;padding:10px;border-radius:10px;margin-top:8px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left}.row{display:flex;gap:12px;flex-wrap:wrap}.row label{display:flex;flex-direction:column;gap:5px}.check{display:flex!important;flex-direction:row!important;align-items:center}.error{background:#3b1010;border:1px solid #7f1d1d;padding:12px;border-radius:10px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
+    :root{
+      color-scheme:dark;
+      --bg:#070b12;
+      --panel:#0f1726;
+      --panel-2:#121d2e;
+      --panel-3:#0a1220;
+      --line:#25334a;
+      --line-soft:#1b293d;
+      --text:#edf3fb;
+      --muted:#91a4bd;
+      --accent:#5aa7ff;
+      --accent-2:#7c82ff;
+      --good:#32d583;
+      --good-bg:#0d2b22;
+      --bad:#ff6363;
+      --bad-bg:#351417;
+      --wait:#f5c451;
+      --wait-bg:#33280c;
+      --info:#68b8ff;
+      --shadow:0 18px 50px rgba(0,0,0,.22);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 80% -10%,rgba(90,167,255,.11),transparent 30%),var(--bg);color:var(--text);line-height:1.5}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.55}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1280px;margin:0 auto;padding:30px 24px 50px}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .brand-mark{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));font-weight:900;letter-spacing:-.04em;color:white;box-shadow:0 10px 30px rgba(90,167,255,.25)}
+    h1{font-size:30px;line-height:1.1;margin:0;letter-spacing:-.03em}
+    h2{font-size:19px;margin:0;letter-spacing:-.01em}
+    h3{font-size:16px;margin:0}
+    p{margin:0}
+    .subtitle{color:var(--muted);margin-top:6px;font-size:14px}
+    .status-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(15,23,38,.8);padding:8px 12px;border-radius:999px;color:var(--muted);font-size:13px;white-space:nowrap}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--wait);box-shadow:0 0 0 4px rgba(245,196,81,.09)}
+    .status-dot.ok{background:var(--good);box-shadow:0 0 0 4px rgba(50,213,131,.09)}
+    .status-dot.bad{background:var(--bad);box-shadow:0 0 0 4px rgba(255,99,99,.09)}
+    .card{background:linear-gradient(180deg,rgba(18,29,46,.96),rgba(15,23,38,.96));border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+    .card.flat{box-shadow:none}
+    .control-card{display:grid;grid-template-columns:minmax(250px,1.5fr) minmax(170px,.8fr) minmax(170px,.8fr) auto;gap:14px;align-items:end}
+    label.field{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    input,select{width:100%;background:var(--panel-3);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px;outline:none;transition:.18s border-color,.18s box-shadow}
+    input:focus,select:focus{border-color:rgba(90,167,255,.75);box-shadow:0 0 0 3px rgba(90,167,255,.12)}
+    .btn{border:1px solid var(--line);border-radius:11px;padding:11px 16px;font-weight:800;color:var(--text);background:#111c2d;transition:.18s transform,.18s border-color,.18s background}
+    .btn:hover:not(:disabled){transform:translateY(-1px);border-color:#3d5271;background:#17243a}
+    .btn.primary{background:linear-gradient(135deg,#277fe8,#5968f3);border-color:transparent;color:#fff;min-width:118px}
+    .btn.ghost{background:transparent}
+    .section{margin-top:18px}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+    .section-kicker{color:var(--muted);font-size:12px;margin-top:4px}
+    .psych-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:22px;align-items:start}
+    .checks{display:grid;grid-template-columns:repeat(2,minmax(170px,1fr));gap:10px}
+    .check{display:flex;align-items:center;gap:9px;border:1px solid var(--line-soft);background:var(--panel-3);padding:11px 12px;border-radius:11px;font-size:14px}
+    .check input{width:auto;accent-color:var(--accent)}
+    .sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .slider-box{background:var(--panel-3);border:1px solid var(--line-soft);border-radius:11px;padding:11px 12px}
+    .slider-title{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    input[type="range"]{padding:0;border:0;box-shadow:none;margin-top:12px;accent-color:var(--accent)}
+    .error{display:none;background:var(--bad-bg);border:1px solid rgba(255,99,99,.42);color:#ffd3d3;padding:13px 15px;border-radius:12px;margin-top:16px}
+    .loading-line{display:none;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin-top:14px}
+    .loading-line.show{display:flex}
+    .spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #result{display:none}
+    .decision-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:1.35fr .65fr;gap:24px;align-items:center;padding:26px;background:linear-gradient(135deg,rgba(90,167,255,.13),rgba(124,130,255,.06)),var(--panel);border:1px solid #31445f;border-radius:20px;box-shadow:var(--shadow)}
+    .decision-hero::after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-80px;top:-120px;background:rgba(90,167,255,.09);filter:blur(4px)}
+    .decision-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:800}
+    .decision-title{font-size:42px;line-height:1;margin:8px 0 10px;font-weight:900;letter-spacing:-.045em}
+    .decision-title.buy{color:var(--good)}
+    .decision-title.sell{color:var(--bad)}
+    .decision-title.wait{color:var(--wait)}
+    .decision-subtitle{color:var(--muted);max-width:700px}
+    .hero-side{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;z-index:1}
+    .hero-metric{background:rgba(7,11,18,.38);border:1px solid var(--line);border-radius:13px;padding:13px}
+    .metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:800}
+    .metric-value{font-size:23px;font-weight:900;margin-top:4px;letter-spacing:-.02em}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    .score-card{min-height:156px;display:flex;flex-direction:column;justify-content:space-between}
+    .score-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .score-number{font-size:29px;font-weight:900;letter-spacing:-.03em}
+    .score-number.buy{color:var(--good)}.score-number.sell{color:var(--bad)}.score-number.wait{color:var(--wait)}
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;border:1px solid var(--line);font-size:11px;font-weight:800;color:var(--muted);background:var(--panel-3)}
+    .badge.good{color:#9df2c7;border-color:rgba(50,213,131,.3);background:rgba(50,213,131,.08)}
+    .badge.bad{color:#ffb0b0;border-color:rgba(255,99,99,.3);background:rgba(255,99,99,.08)}
+    .badge.warn{color:#ffe29b;border-color:rgba(245,196,81,.3);background:rgba(245,196,81,.08)}
+    .score-track{height:7px;border-radius:999px;background:#09111e;position:relative;overflow:hidden;margin-top:12px;border:1px solid #1c2a3e}
+    .score-track::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#43536a}
+    .score-fill{position:absolute;top:0;bottom:0;border-radius:999px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .risk-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:10px;margin-top:14px}
+    .mini-stat{background:var(--panel-3);border:1px solid var(--line-soft);border-radius:12px;padding:12px}
+    .mini-value{font-size:18px;font-weight:850;margin-top:3px}
+    .regime-main{font-size:24px;font-weight:900;margin:10px 0 4px}
+    .probability{margin-top:14px;padding:13px;border:1px solid var(--line-soft);background:var(--panel-3);border-radius:12px}
+    .rationale-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .rationale-item{border:1px solid var(--line-soft);background:var(--panel-3);border-radius:12px;padding:13px}
+    .rationale-item b{display:block;margin-bottom:4px}
+    .warning{background:var(--wait-bg);border:1px solid rgba(245,196,81,.28);color:#ffe7ab;padding:11px 12px;border-radius:11px;margin-top:9px}
+    .scenario{margin-top:14px;border-left:3px solid var(--accent);padding:12px 14px;background:rgba(90,167,255,.06);border-radius:0 11px 11px 0}
+    .table-wrap{overflow-x:auto;border:1px solid var(--line-soft);border-radius:12px}
+    table{width:100%;border-collapse:collapse;min-width:680px}
+    td,th{padding:11px 12px;border-bottom:1px solid var(--line-soft);text-align:left;font-size:13px}
+    th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:#0c1524}
+    tr:last-child td{border-bottom:0}
+    .tf-score{font-weight:900}
+    .news-list{display:grid;gap:10px}
+    .news-item{border:1px solid var(--line-soft);background:var(--panel-3);border-radius:12px;padding:14px}
+    .news-title{font-weight:800;line-height:1.35}
+    .news-meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:8px;color:var(--muted);font-size:12px}
+    .research-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .research-placeholder{min-height:190px;display:grid;place-items:center;text-align:center;color:var(--muted);border:1px dashed #32435e;border-radius:12px;background:rgba(7,11,18,.18);padding:22px}
+    .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+    .backtest-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border:1px solid var(--line-soft);background:var(--panel-3);border-radius:12px;margin-top:12px}
+    .corr-list{display:grid;gap:13px;margin-top:14px}
+    .corr-row{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center}
+    .corr-name{min-width:0}.corr-name strong{display:block;font-size:13px}.corr-name span{display:block;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .corr-track{position:relative;height:15px;background:#09111e;border:1px solid #1c2a3e;border-radius:999px;overflow:hidden}
+    .corr-track::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#51647f;z-index:2}
+    .corr-bar{position:absolute;top:2px;bottom:2px;border-radius:999px}
+    .corr-value{text-align:right;font-weight:900}
+    .corr-note{font-size:12px;color:var(--muted);margin-top:11px}
+    .empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+    .footer{color:var(--muted);font-size:12px;margin-top:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    @media(max-width:900px){.control-card{grid-template-columns:1fr 1fr}.psych-grid,.decision-hero,.two-col,.research-grid{grid-template-columns:1fr}.hero-side{grid-template-columns:repeat(4,1fr)}.rationale-grid{grid-template-columns:1fr}.sliders{grid-template-columns:1fr 1fr 1fr}}
+    @media(max-width:640px){.wrap{padding:20px 14px 38px}.header{align-items:flex-start}.status-pill{display:none}.control-card{grid-template-columns:1fr}.checks{grid-template-columns:1fr}.sliders{grid-template-columns:1fr}.hero-side{grid-template-columns:1fr 1fr}.decision-title{font-size:34px}.metric-grid{grid-template-columns:1fr 1fr}.corr-row{grid-template-columns:115px 1fr 54px}.card{padding:16px}}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Trading Intelligence</h1>
-  <p class="muted">Análisis técnico multitemporal, noticias, macro, sentimiento, psicología y riesgo con datos reales.</p>
-  <div class="card top">
-    <label>Símbolo<br><input id="symbol" value="BTC-USD"></label>
-    <label>Capital<br><input id="capital" type="number" value="10000"></label>
-    <label>Perfil<br><select id="profile"><option value="conservador">Conservador</option><option value="moderado" selected>Moderado</option><option value="agresivo">Agresivo</option></select></label>
-    <button id="analyze">Analizar</button>
-  </div>
-  <div class="card section">
-    <h3>Psicología del trader</h3>
-    <div class="row">
-      <label class="check"><input id="fomo" type="checkbox">FOMO</label><label class="check"><input id="confirm" type="checkbox">Confirmación</label><label class="check"><input id="revenge" type="checkbox">Revenge trading</label><label class="check"><input id="overconf" type="checkbox">Exceso de confianza</label>
-      <label>Miedo<input id="fear" type="number" min="0" max="100" value="30"></label><label>Avaricia<input id="greed" type="number" min="0" max="100" value="30"></label><label>Disciplina<input id="discipline" type="number" min="0" max="100" value="70"></label>
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">TI</div>
+      <div>
+        <h1>Trading Intelligence</h1>
+        <p class="subtitle">Confluencia técnica, macro, noticias, sentimiento, psicología y riesgo.</p>
+      </div>
     </div>
-  </div>
-  <div id="error" class="error section" style="display:none"></div>
-  <div id="result" style="display:none">
-    <div class="grid section"><div class="card"><small>Decisión</small><div id="decision" class="big"></div></div><div class="card"><small>Confianza</small><div id="confidence" class="big"></div></div><div class="card"><small>Score institucional</small><div id="score" class="big"></div></div><div class="card"><small>Precio</small><div id="price" class="big"></div></div></div>
-    <div id="components" class="grid section"></div>
-    <div class="grid section"><div class="card"><h3>Plan de riesgo</h3><div id="risk"></div></div><div class="card"><h3>Régimen</h3><div id="regime"></div></div></div>
-    <div class="card section"><h3>Justificación</h3><div id="rationale"></div><div id="warnings"></div><h4>Escenario alternativo</h4><p id="alternative"></p></div>
-    <div class="card section"><h3>Temporalidades</h3><div id="timeframes"></div></div>
-    <div class="card section"><h3>Noticias</h3><div id="news"></div></div>
-    <div class="grid section"><div class="card"><h3>Backtest</h3><button id="loadBacktest">Cargar 5 años</button><pre id="backtest" class="mono"></pre></div><div class="card"><h3>Correlaciones</h3><button id="loadCorr">Cargar</button><pre id="corr" class="mono"></pre></div></div>
-  </div>
-  <p class="muted section">Uso educativo y de investigación. No constituye asesoramiento financiero.</p>
+    <div class="status-pill"><span id="apiDot" class="status-dot"></span><span id="apiStatus">Comprobando API…</span></div>
+  </header>
+
+  <section class="card flat control-card">
+    <label class="field">Activo
+      <select id="symbol">
+        <optgroup label="Criptomonedas">
+          <option value="BTC-USD" selected>Bitcoin · BTC-USD</option>
+          <option value="ETH-USD">Ethereum · ETH-USD</option>
+          <option value="SOL-USD">Solana · SOL-USD</option>
+          <option value="BNB-USD">BNB · BNB-USD</option>
+          <option value="XRP-USD">XRP · XRP-USD</option>
+          <option value="DOGE-USD">Dogecoin · DOGE-USD</option>
+          <option value="ADA-USD">Cardano · ADA-USD</option>
+        </optgroup>
+        <optgroup label="Acciones">
+          <option value="AAPL">Apple · AAPL</option>
+          <option value="MSFT">Microsoft · MSFT</option>
+          <option value="NVDA">NVIDIA · NVDA</option>
+          <option value="TSLA">Tesla · TSLA</option>
+          <option value="AMZN">Amazon · AMZN</option>
+          <option value="META">Meta · META</option>
+          <option value="GOOGL">Alphabet · GOOGL</option>
+          <option value="AMD">AMD · AMD</option>
+        </optgroup>
+        <optgroup label="ETFs e índices">
+          <option value="SPY">S&P 500 ETF · SPY</option>
+          <option value="QQQ">Nasdaq 100 ETF · QQQ</option>
+          <option value="DIA">Dow Jones ETF · DIA</option>
+          <option value="IWM">Russell 2000 ETF · IWM</option>
+          <option value="^GSPC">S&P 500 Index · ^GSPC</option>
+          <option value="^IXIC">Nasdaq Composite · ^IXIC</option>
+          <option value="^DJI">Dow Jones Index · ^DJI</option>
+        </optgroup>
+        <optgroup label="Forex">
+          <option value="EURUSD=X">EUR/USD</option>
+          <option value="GBPUSD=X">GBP/USD</option>
+          <option value="USDJPY=X">USD/JPY</option>
+          <option value="AUDUSD=X">AUD/USD</option>
+          <option value="USDCAD=X">USD/CAD</option>
+        </optgroup>
+        <optgroup label="Commodities">
+          <option value="GC=F">Oro · GC=F</option>
+          <option value="SI=F">Plata · SI=F</option>
+          <option value="CL=F">Petróleo WTI · CL=F</option>
+          <option value="NG=F">Gas natural · NG=F</option>
+        </optgroup>
+      </select>
+    </label>
+    <label class="field">Capital de referencia
+      <input id="capital" type="number" min="100" step="100" value="10000" />
+    </label>
+    <label class="field">Perfil de riesgo
+      <select id="profile">
+        <option value="conservador">Conservador</option>
+        <option value="moderado" selected>Moderado</option>
+        <option value="agresivo">Agresivo</option>
+      </select>
+    </label>
+    <button id="analyze" class="btn primary">Analizar</button>
+  </section>
+
+  <section class="card flat section">
+    <div class="section-head">
+      <div><h2>Psicología del trader</h2><p class="section-kicker">Estos datos pueden reducir el riesgo o vetar una operación.</p></div>
+      <span class="badge">Autodeclarado</span>
+    </div>
+    <div class="psych-grid">
+      <div class="checks">
+        <label class="check"><input id="fomo" type="checkbox" /> <span>FOMO</span></label>
+        <label class="check"><input id="confirm" type="checkbox" /> <span>Sesgo de confirmación</span></label>
+        <label class="check"><input id="revenge" type="checkbox" /> <span>Revenge trading</span></label>
+        <label class="check"><input id="overconf" type="checkbox" /> <span>Exceso de confianza</span></label>
+      </div>
+      <div class="sliders">
+        <div class="slider-box"><div class="slider-title"><span>Miedo</span><strong id="fearValue">30</strong></div><input id="fear" type="range" min="0" max="100" value="30" /></div>
+        <div class="slider-box"><div class="slider-title"><span>Avaricia</span><strong id="greedValue">30</strong></div><input id="greed" type="range" min="0" max="100" value="30" /></div>
+        <div class="slider-box"><div class="slider-title"><span>Disciplina</span><strong id="disciplineValue">70</strong></div><input id="discipline" type="range" min="0" max="100" value="70" /></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="error" class="error"></div>
+  <div id="loading" class="loading-line"><span class="spinner"></span><span>Consultando mercado y ejecutando los motores de análisis…</span></div>
+
+  <main id="result">
+    <section id="decisionHero" class="decision-hero section">
+      <div>
+        <div class="decision-label"><span id="heroSymbol">—</span> · Decisión del motor</div>
+        <div id="decision" class="decision-title">—</div>
+        <p id="heroExplanation" class="decision-subtitle">La decisión combina los motores especializados y los filtros de riesgo.</p>
+      </div>
+      <div class="hero-side">
+        <div class="hero-metric"><div class="metric-label">Confianza</div><div id="confidence" class="metric-value">—</div></div>
+        <div class="hero-metric"><div class="metric-label">Score</div><div id="score" class="metric-value">—</div></div>
+        <div class="hero-metric"><div class="metric-label">Precio</div><div id="price" class="metric-value">—</div></div>
+        <div class="hero-metric"><div class="metric-label">R:R</div><div id="heroRR" class="metric-value">—</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Motores de confluencia</h2><p class="section-kicker">Dirección y fuerza de cada fuente de evidencia.</p></div><span id="generatedAt" class="badge">—</span></div>
+      <div id="components" class="grid"></div>
+    </section>
+
+    <section class="two-col section">
+      <div class="card flat">
+        <div class="section-head"><div><h2>Plan de riesgo</h2><p class="section-kicker">La exposición se calcula desde la pérdida máxima permitida.</p></div><span id="riskBadge" class="badge">—</span></div>
+        <div id="risk" class="risk-grid"></div>
+      </div>
+      <div class="card flat">
+        <div class="section-head"><div><h2>Régimen de mercado</h2><p class="section-kicker">Contexto donde debe interpretarse la señal.</p></div></div>
+        <div id="regime"></div>
+      </div>
+    </section>
+
+    <section class="card flat section">
+      <div class="section-head"><div><h2>Justificación de la decisión</h2><p class="section-kicker">Qué está apoyando o limitando la operación.</p></div></div>
+      <div id="rationale" class="rationale-grid"></div>
+      <div id="warnings"></div>
+      <div class="scenario"><div class="metric-label">Escenario alternativo / invalidación</div><p id="alternative" style="margin-top:5px"></p></div>
+    </section>
+
+    <section class="card flat section">
+      <div class="section-head"><div><h2>Análisis multitemporal</h2><p class="section-kicker">1H, 4H, Diario y Semanal.</p></div></div>
+      <div id="timeframes" class="table-wrap"></div>
+    </section>
+
+    <section class="card flat section">
+      <div class="section-head"><div><h2>Noticias y sentimiento</h2><p class="section-kicker">Titulares recientes clasificados por relevancia y dirección.</p></div><span id="newsCount" class="badge">0 noticias</span></div>
+      <div id="news" class="news-list"></div>
+    </section>
+
+    <section class="research-grid section">
+      <div class="card flat">
+        <div class="section-head">
+          <div><h2>Backtest de referencia</h2><p class="section-kicker">5 años · EMA20/50 + filtro RSI. No representa el motor completo.</p></div>
+          <button id="loadBacktest" class="btn">Cargar</button>
+        </div>
+        <div id="backtest"><div class="research-placeholder">Carga el backtest para convertir las métricas históricas en un resumen visual.</div></div>
+      </div>
+      <div class="card flat">
+        <div class="section-head">
+          <div><h2>Correlaciones</h2><p class="section-kicker">1 año · retornos diarios frente a benchmarks.</p></div>
+          <button id="loadCorr" class="btn">Cargar</button>
+        </div>
+        <div id="corr"><div class="research-placeholder">Carga las correlaciones para identificar exposición a mercados relacionados.</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><span>Uso educativo y de investigación. No constituye asesoramiento financiero.</span><span>Trading Intelligence · MVP institucional</span></footer>
 </div>
+
 <script>
-let lastSymbol='BTC-USD'; const $=id=>document.getElementById(id); const fmt=x=>x==null?'—':Number(x).toLocaleString(undefined,{maximumFractionDigits:6});
-function component(name,c){const cls=c.score>15?'buy':c.score<-15?'sell':'wait';return `<div class="card"><small>${name}</small><div class="big ${cls}">${c.score>0?'+':''}${c.score}</div><div>${c.label}</div></div>`}
-async function analyze(){
- $('error').style.display='none';
- const body={symbol:$('symbol').value.trim(),capital:Number($('capital').value),risk_profile:$('profile').value,psychology:{fomo:$('fomo').checked,confirmation_bias:$('confirm').checked,revenge_trading:$('revenge').checked,overconfidence:$('overconf').checked,fear_level:Number($('fear').value),greed_level:Number($('greed').value),discipline_level:Number($('discipline').value)}};
- try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Error de análisis');lastSymbol=d.symbol;$('result').style.display='block';$('decision').textContent=d.decision;$('decision').className='big '+(d.decision==='COMPRAR'?'buy':d.decision==='VENDER'?'sell':'wait');$('confidence').textContent=d.confidence+'%';$('score').textContent=d.institutional_score;$('price').textContent=fmt(d.price);$('components').innerHTML=component('Técnico',d.technical)+component('Macro',d.fundamental_macro)+component('Noticias',d.news)+component('Sentimiento',d.sentiment)+component('Psicología',d.psychology);const k=d.risk;$('risk').innerHTML=`<table><tr><td>Entrada</td><td>${fmt(k.entry)}</td></tr><tr><td>Stop</td><td>${fmt(k.stop_loss)}</td></tr><tr><td>TP1</td><td>${fmt(k.take_profit_1)}</td></tr><tr><td>TP2</td><td>${fmt(k.take_profit_2)}</td></tr><tr><td>R:R</td><td>${k.risk_reward?'1 : '+k.risk_reward:'—'}</td></tr><tr><td>Riesgo</td><td>${k.risk_percent}%</td></tr><tr><td>Pérdida máxima</td><td>$${fmt(k.max_loss)}</td></tr><tr><td>Tamaño</td><td>${fmt(k.position_size)}</td></tr></table>`;$('regime').innerHTML=`<p><b>${d.market_regime}</b></p><p>Probabilidad histórica: <b>${d.historical_probability==null?'muestra insuficiente':d.historical_probability+'%'}</b></p>`;$('rationale').innerHTML=Object.entries(d.rationale).map(([a,b])=>`<p><b>${a}</b>: ${b}</p>`).join('');$('warnings').innerHTML=d.warnings.map(w=>`<div class="warning">⚠ ${w}</div>`).join('');$('alternative').textContent=d.alternative_scenario;const tf=d.technical.details.timeframes;$('timeframes').innerHTML='<table><tr><th>TF</th><th>Score</th><th>Tendencia</th><th>RSI</th><th>ADX</th><th>Soporte</th><th>Resistencia</th></tr>'+Object.entries(tf).map(([n,v])=>`<tr><td>${n}</td><td>${v.score}</td><td>${v.label}</td><td>${v.rsi??'—'}</td><td>${v.adx??'—'}</td><td>${fmt(v.support)}</td><td>${fmt(v.resistance)}</td></tr>`).join('')+'</table>';$('news').innerHTML=(d.news.details.articles||[]).map(n=>`<p><b>${n.title}</b><br><span class="muted">${n.publisher} · ${n.relevance} · sentimiento ${n.sentiment}</span></p>`).join('')||'<p>Sin noticias disponibles.</p>'}catch(e){$('error').textContent=e.message;$('error').style.display='block'}
+const $ = id => document.getElementById(id);
+let lastSymbol = 'BTC-USD';
+
+const names = {
+  technical:'Técnico', fundamental:'Fundamental / Macro', sentiment:'Sentimiento', psychological:'Psicología'
+};
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
-$('analyze').onclick=analyze;$('loadBacktest').onclick=async()=>{const r=await fetch('/api/backtest/'+encodeURIComponent(lastSymbol));$('backtest').textContent=JSON.stringify(await r.json(),null,2)};$('loadCorr').onclick=async()=>{const r=await fetch('/api/correlations/'+encodeURIComponent(lastSymbol));$('corr').textContent=JSON.stringify(await r.json(),null,2)};analyze();
+function safeUrl(value){
+  try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)?u.href:'#'}catch{return '#'}
+}
+function fmt(value, digits=4){
+  if(value===null || value===undefined || Number.isNaN(Number(value))) return '—';
+  return Number(value).toLocaleString('es-CR',{maximumFractionDigits:digits});
+}
+function pct(value, digits=2){return value===null || value===undefined?'—':`${fmt(value,digits)}%`}
+function scoreTone(score){return Number(score)>15?'buy':Number(score)<-15?'sell':'wait'}
+function scoreBadge(score){return Number(score)>15?'good':Number(score)<-15?'bad':'warn'}
+function scoreLabel(score){return Number(score)>15?'Sesgo alcista':Number(score)<-15?'Sesgo bajista':'Neutral / mixto'}
+function setLoading(active){
+  $('loading').classList.toggle('show',active);
+  $('analyze').disabled=active;
+  $('analyze').textContent=active?'Analizando…':'Analizar';
+}
+function resetResearch(){
+  $('backtest').innerHTML='<div class="research-placeholder">Carga el backtest para convertir las métricas históricas en un resumen visual.</div>';
+  $('corr').innerHTML='<div class="research-placeholder">Carga las correlaciones para identificar exposición a mercados relacionados.</div>';
+}
+function componentCard(name,c){
+  const score=Number(c.score||0), tone=scoreTone(score), width=Math.min(50,Math.abs(score)/2);
+  const side=score>=0?`left:50%;width:${width}%`:`right:50%;width:${width}%`;
+  const color=score>15?'var(--good)':score<-15?'var(--bad)':'var(--wait)';
+  return `<div class="card flat score-card">
+    <div class="score-top"><div><div class="metric-label">${escapeHtml(name)}</div><div class="score-number ${tone}">${score>0?'+':''}${fmt(score,1)}</div></div><span class="badge ${scoreBadge(score)}">${escapeHtml(c.label||scoreLabel(score))}</span></div>
+    <div><div class="score-track"><span class="score-fill" style="${side};background:${color}"></span></div><div class="section-kicker" style="margin-top:7px">${scoreLabel(score)}</div></div>
+  </div>`;
+}
+function miniStat(label,value){return `<div class="mini-stat"><div class="metric-label">${escapeHtml(label)}</div><div class="mini-value">${escapeHtml(value)}</div></div>`}
+function trendBadge(label,score){return `<span class="badge ${scoreBadge(score)}">${escapeHtml(label||'—')}</span>`}
+
+async function apiFetch(url, options={}){
+  const response=await fetch(url,options);
+  let data;
+  try{data=await response.json()}catch{data={detail:'Respuesta no válida del servidor'}}
+  if(!response.ok) throw new Error(data.detail||`Error HTTP ${response.status}`);
+  return data;
+}
+
+async function checkHealth(){
+  try{await apiFetch('/api/health');$('apiDot').className='status-dot ok';$('apiStatus').textContent='API lista'}
+  catch{$('apiDot').className='status-dot bad';$('apiStatus').textContent='API no disponible'}
+}
+
+async function analyze(){
+  $('error').style.display='none';
+  const selected=$('symbol').value;
+  if(selected!==lastSymbol) resetResearch();
+  const body={
+    symbol:selected,
+    capital:Number($('capital').value),
+    risk_profile:$('profile').value,
+    psychology:{
+      fomo:$('fomo').checked,
+      confirmation_bias:$('confirm').checked,
+      revenge_trading:$('revenge').checked,
+      overconfidence:$('overconf').checked,
+      fear_level:Number($('fear').value),
+      greed_level:Number($('greed').value),
+      discipline_level:Number($('discipline').value)
+    }
+  };
+  setLoading(true);
+  try{
+    const d=await apiFetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    lastSymbol=d.symbol;
+    $('result').style.display='block';
+    $('heroSymbol').textContent=d.symbol;
+    $('decision').textContent=d.decision;
+    $('decision').className='decision-title '+(d.decision==='COMPRAR'?'buy':d.decision==='VENDER'?'sell':'wait');
+    $('confidence').textContent=pct(d.confidence,0);
+    $('score').textContent=(Number(d.institutional_score)>0?'+':'')+fmt(d.institutional_score,1);
+    $('price').textContent=fmt(d.price,6);
+    $('heroRR').textContent=d.risk.risk_reward?`1 : ${fmt(d.risk.risk_reward,1)}`:'—';
+    $('heroExplanation').textContent=d.decision==='COMPRAR'?'La confluencia supera el umbral alcista; la ejecución depende de respetar el plan de riesgo y la invalidación.':d.decision==='VENDER'?'La confluencia supera el umbral bajista; la tesis solo es válida mientras se mantenga la estructura y el stop.':'La evidencia todavía no ofrece una ventaja suficiente. Conservar liquidez forma parte del plan.';
+    $('generatedAt').textContent=`Actualizado ${new Date(d.generated_at).toLocaleString('es-CR')}`;
+
+    $('components').innerHTML=
+      componentCard('Técnico',d.technical)+
+      componentCard('Macro',d.fundamental_macro)+
+      componentCard('Noticias',d.news)+
+      componentCard('Sentimiento',d.sentiment)+
+      componentCard('Psicología',d.psychology);
+
+    const r=d.risk;
+    $('risk').innerHTML=
+      miniStat('Entrada',fmt(r.entry,6))+
+      miniStat('Stop Loss',fmt(r.stop_loss,6))+
+      miniStat('Take Profit 1',fmt(r.take_profit_1,6))+
+      miniStat('Take Profit 2',fmt(r.take_profit_2,6))+
+      miniStat('Riesgo / beneficio',r.risk_reward?`1 : ${fmt(r.risk_reward,1)}`:'—')+
+      miniStat('Capital en riesgo',pct(r.risk_percent,2))+
+      miniStat('Pérdida máxima',`$${fmt(r.max_loss,2)}`)+
+      miniStat('Tamaño teórico',fmt(r.position_size,6));
+    $('riskBadge').textContent=`Máx. ${pct(r.risk_percent,2)}`;
+    $('riskBadge').className='badge '+(r.risk_percent<=.5?'good':r.risk_percent<=1?'warn':'bad');
+
+    $('regime').innerHTML=`<div class="regime-main">${escapeHtml(d.market_regime)}</div><p class="section-kicker">Régimen detectado por estructura, tendencia y volatilidad.</p><div class="probability"><div class="metric-label">Probabilidad histórica condicionada</div><div class="mini-value">${d.historical_probability==null?'Muestra insuficiente':pct(d.historical_probability,1)}</div><p class="section-kicker">Dato descriptivo; no equivale a una probabilidad garantizada de la señal actual.</p></div>`;
+
+    $('rationale').innerHTML=Object.entries(d.rationale).map(([key,value])=>`<div class="rationale-item"><b>${escapeHtml(names[key]||key)}</b><span class="section-kicker">${escapeHtml(value)}</span></div>`).join('');
+    $('warnings').innerHTML=(d.warnings||[]).map(w=>`<div class="warning">⚠ ${escapeHtml(w)}</div>`).join('');
+    $('alternative').textContent=d.alternative_scenario;
+
+    const tf=d.technical.details.timeframes||{};
+    $('timeframes').innerHTML=`<table><thead><tr><th>Temporalidad</th><th>Score</th><th>Tendencia</th><th>RSI</th><th>ADX</th><th>Soporte</th><th>Resistencia</th></tr></thead><tbody>${Object.entries(tf).map(([name,v])=>`<tr><td><strong>${escapeHtml(name)}</strong></td><td class="tf-score ${scoreTone(v.score)}">${Number(v.score)>0?'+':''}${fmt(v.score,1)}</td><td>${trendBadge(v.label,v.score)}</td><td>${fmt(v.rsi,1)}</td><td>${fmt(v.adx,1)}</td><td>${fmt(v.support,6)}</td><td>${fmt(v.resistance,6)}</td></tr>`).join('')}</tbody></table>`;
+
+    const articles=d.news.details.articles||[];
+    $('newsCount').textContent=`${articles.length} noticia${articles.length===1?'':'s'}`;
+    $('news').innerHTML=articles.length?articles.map(n=>{
+      const link=safeUrl(n.link), title=escapeHtml(n.title||'Sin título'), publisher=escapeHtml(n.publisher||'Fuente desconocida');
+      return `<article class="news-item"><div class="news-title">${link==='#'?title:`<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${title}</a>`}</div><div class="news-meta"><span>${publisher}</span><span class="badge">${escapeHtml(n.relevance||'—')}</span><span class="badge ${Number(n.sentiment)>0.15?'good':Number(n.sentiment)<-0.15?'bad':'warn'}">Sentimiento ${fmt(n.sentiment,2)}</span></div></article>`;
+    }).join(''):'<div class="empty">No hay noticias disponibles para este activo en este momento.</div>';
+  }catch(error){
+    $('error').textContent=error.message;
+    $('error').style.display='block';
+  }finally{setLoading(false)}
+}
+
+function backtestAssessment(d){
+  if(d.error) return {text:d.error,tone:'bad'};
+  if(!d.trades) return {text:'Sin operaciones suficientes',tone:'warn'};
+  const pf=Number(d.profit_factor||0), sharpe=Number(d.sharpe||0), dd=Math.abs(Number(d.max_drawdown_pct||0));
+  if(pf>=1.3 && sharpe>=.8 && dd<=30) return {text:'Baseline históricamente favorable',tone:'good'};
+  if(pf>=1.05 && sharpe>=.3) return {text:'Baseline marginal / requiere validación',tone:'warn'};
+  return {text:'Baseline débil; no usar como argumento de entrada',tone:'bad'};
+}
+async function loadBacktest(){
+  const button=$('loadBacktest');button.disabled=true;button.textContent='Cargando…';
+  $('backtest').innerHTML='<div class="research-placeholder"><span><span class="spinner" style="display:inline-block;margin-right:8px"></span>Procesando 5 años de datos…</span></div>';
+  try{
+    const d=await apiFetch('/api/backtest/'+encodeURIComponent(lastSymbol));
+    if(d.error || !d.trades){$('backtest').innerHTML=`<div class="empty">${escapeHtml(d.error||'No se generaron operaciones con el baseline.')}</div>`;return}
+    const assessment=backtestAssessment(d);
+    const metrics=[
+      ['Trades',fmt(d.trades,0)],['Win rate',pct(d.win_rate,2)],['Profit factor',fmt(d.profit_factor,3)],
+      ['Sharpe',fmt(d.sharpe,3)],['Max drawdown',pct(d.max_drawdown_pct,2)],['Retorno total',pct(d.total_return_pct,2)],
+      ['Retorno medio',pct(d.average_return_pct,4)],['Expectancy',pct(d.expectancy_pct,4)]
+    ];
+    $('backtest').innerHTML=`<div class="backtest-summary"><div><div class="metric-label">Lectura del baseline</div><strong>${escapeHtml(assessment.text)}</strong></div><span class="badge ${assessment.tone}">${escapeHtml(d.symbol)}</span></div><div class="metric-grid">${metrics.map(([l,v])=>miniStat(l,v)).join('')}</div><p class="corr-note">${escapeHtml(d.note||'')}</p>`;
+  }catch(error){$('backtest').innerHTML=`<div class="empty">No se pudo cargar el backtest: ${escapeHtml(error.message)}</div>`}
+  finally{button.disabled=false;button.textContent='Cargar'}
+}
+
+async function loadCorrelations(){
+  const button=$('loadCorr');button.disabled=true;button.textContent='Cargando…';
+  $('corr').innerHTML='<div class="research-placeholder"><span><span class="spinner" style="display:inline-block;margin-right:8px"></span>Calculando correlaciones…</span></div>';
+  try{
+    const d=await apiFetch('/api/correlations/'+encodeURIComponent(lastSymbol));
+    const items=d.items||[];
+    if(!items.length){
+      const unavailable=(d.unavailable||[]).map(x=>`${x.symbol}: ${x.reason}`).join(' · ');
+      $('corr').innerHTML=`<div class="empty">No se pudieron obtener correlaciones suficientes.${unavailable?`<br><span class="section-kicker">${escapeHtml(unavailable)}</span>`:''}</div>`;return;
+    }
+    const rows=items.map(item=>{
+      const value=Number(item.value), width=Math.min(50,Math.abs(value)*50), positive=value>=0;
+      const style=positive?`left:50%;width:${width}%;background:var(--good)`:`right:50%;width:${width}%;background:var(--bad)`;
+      return `<div class="corr-row"><div class="corr-name"><strong>${escapeHtml(item.symbol)}</strong><span title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span></div><div><div class="corr-track"><span class="corr-bar" style="${style}"></span></div><div class="section-kicker">${escapeHtml(item.interpretation)} · n=${fmt(item.data_points,0)}</div></div><div class="corr-value ${value>0?'buy':value<0?'sell':'wait'}">${value>0?'+':''}${fmt(value,3)}</div></div>`;
+    }).join('');
+    const unavailableCount=(d.unavailable||[]).length;
+    $('corr').innerHTML=`<div class="backtest-summary"><div><div class="metric-label">Ventana</div><strong>${escapeHtml(d.window||'1 año')}</strong></div><span class="badge">${items.length} calculadas</span></div><div class="corr-list">${rows}</div><p class="corr-note">${escapeHtml(d.basis||'Retornos diarios')}${unavailableCount?` · ${unavailableCount} benchmark(s) sin datos suficientes.`:''}</p>`;
+  }catch(error){$('corr').innerHTML=`<div class="empty">No se pudieron cargar las correlaciones: ${escapeHtml(error.message)}</div>`}
+  finally{button.disabled=false;button.textContent='Cargar'}
+}
+
+['fear','greed','discipline'].forEach(id=>$(id).addEventListener('input',()=>$(id+'Value').textContent=$(id).value));
+$('symbol').addEventListener('change',()=>{if($('symbol').value!==lastSymbol)resetResearch()});
+$('analyze').addEventListener('click',analyze);
+$('loadBacktest').addEventListener('click',loadBacktest);
+$('loadCorr').addEventListener('click',loadCorrelations);
+checkHealth();
+analyze();
 </script>
 </body>
 </html>
