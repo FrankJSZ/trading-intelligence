@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.models import AnalysisRequest, AnalysisResponse
@@ -51,4 +51,8 @@ async def correlation(symbol: str):
 
 @app.get("/", include_in_schema=False)
 async def dashboard():
-    return FileResponse(static_dir / "index.html")
+    html = (static_dir / "index.html").read_text(encoding="utf-8")
+    enhancement = '<script src="/static/risk_percentages.js?v=1"></script>'
+    if enhancement not in html:
+        html = html.replace("</body>", f"{enhancement}\n</body>")
+    return HTMLResponse(html)
