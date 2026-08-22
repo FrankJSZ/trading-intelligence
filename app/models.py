@@ -44,8 +44,11 @@ class SignalComponent(BaseModel):
 class RiskPlan(BaseModel):
     entry: float | None
     stop_loss: float | None
+    stop_loss_percent: float | None = None
     take_profit_1: float | None
+    take_profit_1_percent: float | None = None
     take_profit_2: float | None
+    take_profit_2_percent: float | None = None
     risk_reward: float | None
     risk_percent: float
     max_loss: float
