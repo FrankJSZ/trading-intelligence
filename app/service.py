@@ -13,6 +13,7 @@ from app.engines.psychology import analyze_psychology
 from app.engines.risk import build_risk_plan
 from app.engines.technical import analyze_multi_timeframe, historical_direction_probability
 from app.models import AnalysisRequest, AnalysisResponse, SignalComponent
+from app.providers.translator import SpanishNewsTranslator
 from app.providers.yahoo import YahooProvider
 
 
@@ -23,10 +24,19 @@ class TradingAnalysisService:
     are recomputed on every request so changes in capital or trader state are
     reflected immediately. A 60-second TTL absorbs duplicate clicks and nearly
     simultaneous requests without making a 5-minute auto-refresh stale.
+
+    News sentiment is calculated from the original headline. Only after scoring
+    relevance and sentiment do we translate the display title into Spanish.
     """
 
-    def __init__(self, provider: YahooProvider | None = None, cache_ttl_seconds: int = 60):
+    def __init__(
+        self,
+        provider: YahooProvider | None = None,
+        cache_ttl_seconds: int = 60,
+        translator: SpanishNewsTranslator | None = None,
+    ):
         self.provider = provider or YahooProvider()
+        self.translator = translator or SpanishNewsTranslator()
         self.cache_ttl_seconds = max(0, int(cache_ttl_seconds))
         self._snapshot_cache: dict[str, tuple[float, dict]] = {}
         self._snapshot_locks: dict[str, asyncio.Lock] = {}
@@ -47,13 +57,30 @@ class TradingAnalysisService:
             frames = await self.provider.multi_timeframe(symbol)
             try:
                 articles = await self.provider.news(symbol)
+                # Score the source-language headline first so the current English
+                # finance lexicon keeps its behavior. Translation is presentation-only.
                 news = analyze_news(articles)
+                try:
+                    translated_articles, translation_meta = await self.translator.translate_articles(
+                        news.get("articles", [])
+                    )
+                    news["articles"] = translated_articles
+                    news["translation"] = translation_meta
+                except Exception as exc:
+                    # Translation must never break the complete analysis.
+                    news["translation"] = {
+                        "target_language": "es",
+                        "translated": 0,
+                        "fallback": len(news.get("articles", [])),
+                        "error": str(exc),
+                    }
             except Exception as exc:
                 news = {
                     "score": 0.0,
                     "label": "sin datos",
                     "high_impact_count": 0,
                     "articles": [],
+                    "translation": {"target_language": "es", "translated": 0, "fallback": 0},
                     "error": str(exc),
                 }
 
