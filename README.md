@@ -11,6 +11,7 @@ Aplicación local de análisis de trading que combina datos reales de mercado, a
 - EMA 20/50/200, RSI, MACD, ATR, ADX, volumen relativo, soportes y resistencias.
 - Clasificación de régimen: tendencia/rango y volatilidad.
 - Noticias recientes de Yahoo Finance, puntaje de credibilidad/relevancia y sentimiento de titulares.
+- Traducción automática de los titulares al español para la interfaz, conservando el título original para trazabilidad.
 - Contexto macro mediante DXY, US10Y, VIX, SPY, QQQ y oro.
 - Cuestionario de psicología: FOMO, confirmación, revenge trading, exceso de confianza, miedo, avaricia y disciplina.
 - Motor institucional ponderado con veto psicológico y ajuste por volatilidad.
@@ -18,6 +19,7 @@ Aplicación local de análisis de trading que combina datos reales de mercado, a
 - Probabilidad histórica condicionada (descriptiva, no garantía).
 - Endpoint de correlaciones con benchmarks.
 - Backtest base de 5 años con win rate, profit factor, Sharpe, drawdown y expectancy.
+- Autoactualización configurable del análisis principal.
 - Dashboard web local.
 - Docker y CI con pytest.
 
@@ -61,13 +63,18 @@ docker compose up --build
 - `GET /api/correlations/{symbol}`
 - Swagger: `http://127.0.0.1:8000/docs`
 
+## Noticias en español
+
+El motor conserva el titular original para calcular relevancia y sentimiento con el clasificador actual. Después del análisis, el título mostrado en el dashboard se traduce automáticamente al español mediante un proveedor externo sin API key. Las traducciones se guardan temporalmente en memoria para evitar repetir llamadas. Si la traducción falla o el proveedor está temporalmente bloqueado, la aplicación no se detiene: muestra el titular original como fallback.
+
 ## Limitaciones importantes
 
 1. El feed gratuito de Yahoo Finance puede tener retrasos y límites; no es un feed institucional de ejecución.
 2. El sentimiento usa un clasificador léxico transparente de titulares; puede sustituirse posteriormente por FinBERT u otro modelo financiero.
-3. El fundamental profundo por empresa/activo queda como extensión; el MVP usa contexto macro keyless y reproducible.
-4. Los pesos del motor son iniciales y deben calibrarse con walk-forward/out-of-sample antes de usar capital real.
-5. No hay ejecución automática con broker/exchange. Esto es intencional hasta validar señal, riesgo y controles.
+3. La traducción automática depende de un servicio externo y puede fallar o aplicar límites; el título original se conserva como respaldo.
+4. El fundamental profundo por empresa/activo queda como extensión; el MVP usa contexto macro keyless y reproducible.
+5. Los pesos del motor son iniciales y deben calibrarse con walk-forward/out-of-sample antes de usar capital real.
+6. No hay ejecución automática con broker/exchange. Esto es intencional hasta validar señal, riesgo y controles.
 
 ## Roadmap institucional
 
