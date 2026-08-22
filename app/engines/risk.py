@@ -10,6 +10,12 @@ BASE_RISK = {
 }
 
 
+def _price_change_percent(entry: float, target: float | None) -> float | None:
+    if not entry or target is None:
+        return None
+    return round((target / entry - 1) * 100, 3)
+
+
 def build_risk_plan(
     decision: Decision,
     price: float,
@@ -28,7 +34,19 @@ def build_risk_plan(
     max_loss = capital * risk_pct
 
     if decision == Decision.WAIT or atr_value <= 0:
-        return RiskPlan(entry=None, stop_loss=None, take_profit_1=None, take_profit_2=None, risk_reward=None, risk_percent=round(risk_pct * 100, 3), max_loss=round(max_loss, 2), position_size=None)
+        return RiskPlan(
+            entry=None,
+            stop_loss=None,
+            stop_loss_percent=None,
+            take_profit_1=None,
+            take_profit_1_percent=None,
+            take_profit_2=None,
+            take_profit_2_percent=None,
+            risk_reward=None,
+            risk_percent=round(risk_pct * 100, 3),
+            max_loss=round(max_loss, 2),
+            position_size=None,
+        )
 
     stop_distance = max(atr_value * 1.5, price * 0.006)
     rr1 = 2.0 if confidence < 78 else 2.4
@@ -43,4 +61,16 @@ def build_risk_plan(
         tp2 = price - stop_distance * rr2
     size = max_loss / stop_distance if stop_distance > 0 else None
 
-    return RiskPlan(entry=round(price, 6), stop_loss=round(stop, 6), take_profit_1=round(tp1, 6), take_profit_2=round(tp2, 6), risk_reward=rr1, risk_percent=round(risk_pct * 100, 3), max_loss=round(max_loss, 2), position_size=round(size, 8) if size is not None else None)
+    return RiskPlan(
+        entry=round(price, 6),
+        stop_loss=round(stop, 6),
+        stop_loss_percent=_price_change_percent(price, stop),
+        take_profit_1=round(tp1, 6),
+        take_profit_1_percent=_price_change_percent(price, tp1),
+        take_profit_2=round(tp2, 6),
+        take_profit_2_percent=_price_change_percent(price, tp2),
+        risk_reward=rr1,
+        risk_percent=round(risk_pct * 100, 3),
+        max_loss=round(max_loss, 2),
+        position_size=round(size, 8) if size is not None else None,
+    )
