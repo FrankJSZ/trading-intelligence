@@ -284,7 +284,7 @@ class TradingAnalysisService:
                 "high": round(float(row.high), 6),
                 "low": round(float(row.low), 6),
                 "close": round(float(row.close), 6),
-                "volume": float(row.volume) if row.volume == row.volume else 0.0,
+                "volume": float(row.volume) if row.volume is not None and row.volume == row.volume else 0.0,
             }
             for row in frame.itertuples(index=False)
         ]
