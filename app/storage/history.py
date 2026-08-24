@@ -29,8 +29,10 @@ class AnalysisHistory:
         return connection
 
     def _init_schema(self) -> None:
-        with self._lock, self._connect() as conn:
-            conn.execute(
+        with self._lock:
+            conn = self._connect()
+            try:
+                conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS analysis_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,10 +54,13 @@ class AnalysisHistory:
                 )
                 """
             )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_history_symbol_time "
-                "ON analysis_history(symbol, generated_at DESC)"
-            )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_history_symbol_time "
+                    "ON analysis_history(symbol, generated_at DESC)"
+                )
+                conn.commit()
+            finally:
+                conn.close()
 
     def save(self, payload: dict[str, Any]) -> int:
         risk = payload.get("risk") or {}
@@ -76,8 +81,10 @@ class AnalysisHistory:
             risk.get("take_profit_2"),
             json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
         )
-        with self._lock, self._connect() as conn:
-            cursor = conn.execute(
+        with self._lock:
+            conn = self._connect()
+            try:
+                cursor = conn.execute(
                 """
                 INSERT INTO analysis_history (
                     generated_at, symbol, price, market_decision, decision,
@@ -86,9 +93,12 @@ class AnalysisHistory:
                     take_profit_1, take_profit_2, payload_json
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                row,
-            )
-            return int(cursor.lastrowid)
+                    row,
+                )
+                conn.commit()
+                return int(cursor.lastrowid)
+            finally:
+                conn.close()
 
     def recent(self, symbol: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         limit = max(1, min(int(limit), 200))
@@ -106,6 +116,10 @@ class AnalysisHistory:
         sql += " ORDER BY id DESC LIMIT ?"
         params.append(limit)
 
-        with self._lock, self._connect() as conn:
-            rows = conn.execute(sql, params).fetchall()
+        with self._lock:
+            conn = self._connect()
+            try:
+                rows = conn.execute(sql, params).fetchall()
+            finally:
+                conn.close()
         return [dict(row) for row in rows]
