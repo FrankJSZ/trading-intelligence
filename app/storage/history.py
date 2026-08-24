@@ -9,12 +9,7 @@ from typing import Any
 
 
 class AnalysisHistory:
-    """Small local SQLite journal for analysis snapshots.
-
-    SQLite is intentionally used here because the application is local-first and
-    should not require an external database service. Writes are serialized with a
-    lock so FastAPI requests cannot interleave schema/insert operations.
-    """
+    """Small local SQLite journal for analysis snapshots."""
 
     def __init__(self, path: str | None = None):
         configured = path or os.getenv("TI_DB_PATH") or "data/trading_intelligence.db"
@@ -33,27 +28,27 @@ class AnalysisHistory:
             conn = self._connect()
             try:
                 conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS analysis_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    generated_at TEXT NOT NULL,
-                    symbol TEXT NOT NULL,
-                    price REAL NOT NULL,
-                    market_decision TEXT NOT NULL,
-                    decision TEXT NOT NULL,
-                    execution_status TEXT NOT NULL,
-                    confidence REAL NOT NULL,
-                    institutional_score REAL NOT NULL,
-                    market_regime TEXT NOT NULL,
-                    risk_percent REAL,
-                    entry REAL,
-                    stop_loss REAL,
-                    take_profit_1 REAL,
-                    take_profit_2 REAL,
-                    payload_json TEXT NOT NULL
+                    """
+                    CREATE TABLE IF NOT EXISTS analysis_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        generated_at TEXT NOT NULL,
+                        symbol TEXT NOT NULL,
+                        price REAL NOT NULL,
+                        market_decision TEXT NOT NULL,
+                        decision TEXT NOT NULL,
+                        execution_status TEXT NOT NULL,
+                        confidence REAL NOT NULL,
+                        institutional_score REAL NOT NULL,
+                        market_regime TEXT NOT NULL,
+                        risk_percent REAL,
+                        entry REAL,
+                        stop_loss REAL,
+                        take_profit_1 REAL,
+                        take_profit_2 REAL,
+                        payload_json TEXT NOT NULL
+                    )
+                    """
                 )
-                """
-            )
                 conn.execute(
                     "CREATE INDEX IF NOT EXISTS idx_history_symbol_time "
                     "ON analysis_history(symbol, generated_at DESC)"
@@ -81,18 +76,19 @@ class AnalysisHistory:
             risk.get("take_profit_2"),
             json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
         )
+
         with self._lock:
             conn = self._connect()
             try:
                 cursor = conn.execute(
-                """
-                INSERT INTO analysis_history (
-                    generated_at, symbol, price, market_decision, decision,
-                    execution_status, confidence, institutional_score,
-                    market_regime, risk_percent, entry, stop_loss,
-                    take_profit_1, take_profit_2, payload_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+                    """
+                    INSERT INTO analysis_history (
+                        generated_at, symbol, price, market_decision, decision,
+                        execution_status, confidence, institutional_score,
+                        market_regime, risk_percent, entry, stop_loss,
+                        take_profit_1, take_profit_2, payload_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
                     row,
                 )
                 conn.commit()
@@ -110,9 +106,11 @@ class AnalysisHistory:
             FROM analysis_history
         """
         params: list[Any] = []
+
         if symbol:
             sql += " WHERE symbol = ?"
             params.append(symbol.strip().upper())
+
         sql += " ORDER BY id DESC LIMIT ?"
         params.append(limit)
 
@@ -122,4 +120,5 @@ class AnalysisHistory:
                 rows = conn.execute(sql, params).fetchall()
             finally:
                 conn.close()
+
         return [dict(row) for row in rows]
