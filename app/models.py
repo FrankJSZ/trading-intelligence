@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Decision(str, Enum):
@@ -35,6 +35,24 @@ class AnalysisRequest(BaseModel):
     psychology: PsychologyInput = Field(default_factory=PsychologyInput)
 
 
+class WatchlistRequest(BaseModel):
+    symbols: list[str] = Field(default_factory=lambda: ["BTC-USD", "ETH-USD", "NVDA", "SPY"], min_length=1, max_length=8)
+    capital: float = Field(default=10_000, gt=0)
+    risk_profile: RiskProfile = RiskProfile.MODERATE
+
+    @field_validator("symbols")
+    @classmethod
+    def normalize_symbols(cls, values: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for value in values:
+            symbol = value.strip().upper()
+            if symbol and symbol not in cleaned:
+                cleaned.append(symbol)
+        if not cleaned:
+            raise ValueError("La watchlist debe contener al menos un símbolo.")
+        return cleaned[:8]
+
+
 class SignalComponent(BaseModel):
     score: float = Field(ge=-100, le=100)
     label: str
@@ -58,7 +76,9 @@ class RiskPlan(BaseModel):
 class AnalysisResponse(BaseModel):
     symbol: str
     price: float
+    market_decision: Decision
     decision: Decision
+    execution_status: str
     confidence: float
     institutional_score: float
     technical: SignalComponent

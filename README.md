@@ -1,46 +1,63 @@
 # Trading Intelligence
 
-Aplicación local de análisis de trading que combina datos reales de mercado, análisis técnico multitemporal, noticias, sentimiento, macro-proxies, psicología del trader y gestión de riesgo para producir una salida **COMPRAR / VENDER / ESPERAR**.
+Aplicación local de análisis de trading que combina datos reales de mercado, análisis técnico multitemporal, noticias, macro-proxies, psicología del trader y gestión de riesgo para producir una lectura de mercado **COMPRAR / VENDER / ESPERAR** y una decisión operativa separada.
 
 > **Aviso:** proyecto educativo y de investigación. No constituye asesoramiento financiero ni garantiza resultados futuros.
 
-## Qué incluye
+## Fase 2.5
 
-- Datos de mercado reales desde Yahoo Finance sin API key.
-- Temporalidades 1H, 4H (resampleada), Diario y Semanal.
+La consolidación 2.5 separa explícitamente **señal de mercado** y **ejecución**:
+
+- Técnico, macro y noticias forman el score direccional.
+- El sentimiento derivado de esas mismas noticias se muestra como contexto, pero tiene peso 0 para evitar doble conteo.
+- La psicología no vuelve alcista o bajista al mercado: puede bloquear una ejecución o reducir riesgo.
+- La respuesta distingue `market_decision`, `decision` y `execution_status`.
+
+También añade:
+
+- gráfico de velas 1H / 4H / 1D / 1W con Entrada, SL, TP1, TP2, soporte y resistencia;
+- historial local persistente en SQLite;
+- watchlist comparativa de hasta 8 activos;
+- frontend modular (`css/` + `js/`) en lugar de un único HTML monolítico;
+- autoactualización del análisis principal;
+- noticias traducidas al español conservando el título original;
+- pruebas Python y validación sintáctica de módulos JavaScript en CI.
+
+## Datos y análisis
+
+- Yahoo Finance keyless para OHLCV y titulares.
+- Fallback entre `query1` y `query2`.
+- Temporalidades 1H, 4H, Diario y Semanal.
 - EMA 20/50/200, RSI, MACD, ATR, ADX, volumen relativo, soportes y resistencias.
-- Clasificación de régimen: tendencia/rango y volatilidad.
-- Noticias recientes de Yahoo Finance, puntaje de credibilidad/relevancia y sentimiento de titulares.
-- Traducción automática de los titulares al español para la interfaz, conservando el título original para trazabilidad.
-- Contexto macro mediante DXY, US10Y, VIX, SPY, QQQ y oro.
-- Cuestionario de psicología: FOMO, confirmación, revenge trading, exceso de confianza, miedo, avaricia y disciplina.
-- Motor institucional ponderado con veto psicológico y ajuste por volatilidad.
+- Régimen de tendencia/rango y volatilidad.
+- Proxy macro con DXY, US10Y, VIX, SPY, QQQ y oro.
+- Noticias ponderadas por relevancia, actualidad y credibilidad.
+- Psicología: FOMO, confirmación, revenge trading, exceso de confianza, miedo, avaricia y disciplina.
 - Entry, Stop Loss, TP1/TP2, R:R, riesgo máximo y position sizing.
-- Probabilidad histórica condicionada (descriptiva, no garantía).
-- Endpoint de correlaciones con benchmarks.
-- Backtest base de 5 años con win rate, profit factor, Sharpe, drawdown y expectancy.
-- Autoactualización configurable del análisis principal.
-- Dashboard web local.
-- Docker y CI con pytest.
+- Correlaciones contra benchmarks.
+- Backtest baseline de 5 años.
 
 ## Inicio rápido
 
-### Python
+### Windows
 
-Compatible con Python 3.12 y 3.14. En Windows se recomienda usar siempre `python -m pip` y `python -m uvicorn` para garantizar que los comandos se ejecuten dentro del entorno virtual activo.
-
-```bash
+```bat
 python -m venv .venv
-# Windows
 .venv\Scripts\activate
-# macOS/Linux
-source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
 Abre `http://127.0.0.1:8000`.
+
+La base local se crea automáticamente en:
+
+```text
+data/trading_intelligence.db
+```
+
+Puedes cambiarla con la variable de entorno `TI_DB_PATH`.
 
 ### Docker
 
@@ -49,41 +66,36 @@ cp .env.example .env
 docker compose up --build
 ```
 
-## Símbolos comunes
-
-- `BTC-USD`, `ETH-USD`
-- `AAPL`, `NVDA`, `SPY`, `QQQ`
-- `EURUSD=X`, `GBPUSD=X`
-- `GC=F` (oro), `CL=F` (petróleo)
+El directorio local `./data` se monta en `/app/data` para conservar el historial entre reinicios.
 
 ## API
 
 - `POST /api/analyze`
+- `GET /api/chart/{symbol}?timeframe=1D&limit=120`
+- `POST /api/watchlist`
+- `GET /api/history?symbol=BTC-USD&limit=50`
 - `GET /api/backtest/{symbol}`
 - `GET /api/correlations/{symbol}`
 - Swagger: `http://127.0.0.1:8000/docs`
 
 ## Noticias en español
 
-El motor conserva el titular original para calcular relevancia y sentimiento con el clasificador actual. Después del análisis, el título mostrado en el dashboard se traduce automáticamente al español mediante un proveedor externo sin API key. Las traducciones se guardan temporalmente en memoria para evitar repetir llamadas. Si la traducción falla o el proveedor está temporalmente bloqueado, la aplicación no se detiene: muestra el titular original como fallback.
+El motor analiza relevancia y sentimiento sobre el titular original. Después traduce el título al español para presentación. Si el traductor externo falla o aplica límites, la aplicación continúa con el titular original.
 
 ## Limitaciones importantes
 
-1. El feed gratuito de Yahoo Finance puede tener retrasos y límites; no es un feed institucional de ejecución.
-2. El sentimiento usa un clasificador léxico transparente de titulares; puede sustituirse posteriormente por FinBERT u otro modelo financiero.
-3. La traducción automática depende de un servicio externo y puede fallar o aplicar límites; el título original se conserva como respaldo.
-4. El fundamental profundo por empresa/activo queda como extensión; el MVP usa contexto macro keyless y reproducible.
-5. Los pesos del motor son iniciales y deben calibrarse con walk-forward/out-of-sample antes de usar capital real.
-6. No hay ejecución automática con broker/exchange. Esto es intencional hasta validar señal, riesgo y controles.
+1. Yahoo Finance puede tener retrasos, límites o cambios de endpoint; no es un feed institucional de ejecución.
+2. El sentimiento actual deriva de titulares y no es todavía una fuente independiente de posicionamiento/mercado.
+3. La “confianza” sigue siendo heurística; no debe interpretarse como probabilidad calibrada.
+4. El backtest actual sigue siendo un baseline EMA/RSI y no representa todavía el motor completo.
+5. El contexto macro usa proxies de mercado y no sustituye datos oficiales de bancos centrales/agencias estadísticas.
+6. No existe ejecución automática con broker/exchange.
 
-## Roadmap institucional
+## Siguiente etapa cuantitativa
 
-- Proveedor premium y websocket en tiempo real.
-- Calendario macro oficial y discursos de bancos centrales.
-- Fundamentals por tipo de activo.
-- FinBERT/LLM para clasificación de eventos financieros con fuente primaria.
-- Detección avanzada de patrones y volume profile.
-- Walk-forward, Monte Carlo y calibración de probabilidades.
-- Portfolio risk: exposición agregada, correlación, VaR/CVaR y drawdown.
-- Paper trading y journal.
-- Integración con broker/exchange solo después de controles y validación.
+- backtest del motor completo;
+- walk-forward y separación temporal train/validation/test;
+- calibración de probabilidades;
+- Sortino, Calmar, MAE/MFE y Monte Carlo;
+- fuentes macro/fundamentales oficiales;
+- portfolio risk y paper trading.

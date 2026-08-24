@@ -3,15 +3,53 @@ from app.engines.risk import build_risk_plan
 from app.models import Decision, RiskProfile
 
 
-def test_strong_confluence_buys():
-    out = decide(80, 60, 70, 55, 20, False, "TENDENCIA_ALCISTA")
+def test_strong_market_confluence_buys():
+    out = decide(
+        technical=80,
+        macro=60,
+        news=70,
+        psych_severe=False,
+        regime="TENDENCIA_ALCISTA",
+    )
+    assert out["market_decision"] == Decision.BUY
     assert out["decision"] == Decision.BUY
+    assert out["execution_status"] == "HABILITADA"
     assert out["confidence"] >= 60
 
 
-def test_psychology_veto_waits():
-    out = decide(90, 90, 90, 90, -80, True, "TENDENCIA_ALCISTA")
-    assert out["decision"] == Decision.WAIT
+def test_psychology_blocks_execution_but_not_market_signal():
+    normal = decide(
+        technical=90,
+        macro=90,
+        news=90,
+        psych_severe=False,
+        regime="TENDENCIA_ALCISTA",
+    )
+    blocked = decide(
+        technical=90,
+        macro=90,
+        news=90,
+        psych_severe=True,
+        regime="TENDENCIA_ALCISTA",
+    )
+
+    assert normal["market_decision"] == Decision.BUY
+    assert blocked["market_decision"] == Decision.BUY
+    assert normal["score"] == blocked["score"]
+    assert blocked["decision"] == Decision.WAIT
+    assert blocked["execution_status"] == "BLOQUEADA_POR_PSICOLOGIA"
+
+
+def test_market_score_has_no_sentiment_or_psychology_weight():
+    out = decide(
+        technical=40,
+        macro=20,
+        news=10,
+        psych_severe=False,
+        regime="RANGO",
+    )
+    assert out["weights"] == {"technical": 0.45, "macro": 0.30, "news": 0.25}
+    assert round(out["score"], 2) == 26.5
 
 
 def test_risk_plan_position_size_and_percentages_for_buy():
