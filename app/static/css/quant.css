@@ -1,0 +1,18 @@
+.quant-lab{border-color:#36516f;background:linear-gradient(180deg,rgba(24,43,68,.98),rgba(13,24,39,.98))}
+.quant-controls{display:grid;grid-template-columns:repeat(6,minmax(110px,1fr));gap:10px;align-items:end}
+.quant-controls .field{min-width:0}
+.quant-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.quant-note{margin-top:11px;padding:10px 12px;border:1px solid rgba(251,191,36,.28);border-radius:11px;background:rgba(90,66,8,.25);color:#ffe8a6;font-size:12px}
+.quant-loading{display:none;align-items:center;gap:8px;color:var(--muted);padding:18px 0}.quant-loading.show{display:flex}
+.quant-metrics{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:9px;margin-top:12px}
+.quant-metric{border:1px solid #24405e;background:#081522;border-radius:12px;padding:11px}
+.quant-metric strong{display:block;font-size:20px;margin-top:3px}.quant-metric small{color:var(--muted)}
+.quant-split{display:grid;grid-template-columns:1.05fr .95fr;gap:12px;margin-top:12px}
+.quant-panel{border:1px solid #203650;background:#091421;border-radius:13px;padding:13px;min-width:0}.quant-panel h3{font-size:14px;margin:0 0 9px}.quant-panel .table-wrap{max-height:360px;overflow:auto}
+.quant-equity{height:300px;border:1px solid #203650;background:#07111c;border-radius:12px;overflow:hidden}.quant-equity canvas{width:100%;height:100%;display:block}
+.quant-method{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.quant-method div{padding:8px 9px;border:1px solid #203650;border-radius:9px;background:#081522;color:var(--muted);font-size:11px}.quant-method strong{color:var(--text);display:block;margin-bottom:2px}
+.quant-status{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.quant-good{color:var(--good)}.quant-bad{color:var(--bad)}.quant-wait{color:var(--wait)}
+.quant-runs{display:grid;gap:7px}.quant-run{display:flex;justify-content:space-between;gap:9px;align-items:center;border:1px solid #203650;background:#081522;border-radius:10px;padding:9px 10px}.quant-run small{color:var(--muted)}
+@media(max-width:1050px){.quant-controls{grid-template-columns:repeat(3,1fr)}.quant-metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.quant-controls{grid-template-columns:1fr 1fr}.quant-metrics{grid-template-columns:1fr 1fr}.quant-split,.quant-method{grid-template-columns:1fr}.quant-equity{height:240px}}
+@media(max-width:480px){.quant-controls{grid-template-columns:1fr}.quant-metrics{grid-template-columns:1fr 1fr}}
