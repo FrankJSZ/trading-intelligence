@@ -53,6 +53,26 @@ class WatchlistRequest(BaseModel):
         return cleaned[:8]
 
 
+class QuantBacktestRequest(BaseModel):
+    symbol: str = Field(default="BTC-USD", min_length=1, max_length=24)
+    capital: float = Field(default=10_000, gt=0)
+    risk_percent: float = Field(default=1.0, ge=0.25, le=2.0)
+    fee_bps: float = Field(default=10.0, ge=0.0, le=100.0)
+    slippage_bps: float = Field(default=5.0, ge=0.0, le=100.0)
+    max_holding_bars: int = Field(default=20, ge=2, le=60)
+    years: int = Field(default=5, ge=3, le=5)
+    walk_forward: bool = True
+    monte_carlo_runs: int = Field(default=1000, ge=100, le=5000)
+
+    @field_validator("symbol")
+    @classmethod
+    def normalize_symbol(cls, value: str) -> str:
+        symbol = value.strip().upper()
+        if not symbol:
+            raise ValueError("El símbolo no puede estar vacío.")
+        return symbol
+
+
 class SignalComponent(BaseModel):
     score: float = Field(ge=-100, le=100)
     label: str
