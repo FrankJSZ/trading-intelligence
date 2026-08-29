@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.engines.macro import PROXIES
@@ -153,11 +153,15 @@ async def backtest(symbol: str):
 @app.get("/api/correlations/{symbol}")
 async def correlation(symbol: str):
     try:
-        return await service.correlation(symbol)
+        return await service.correlation(symbol.upper())
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get("/", include_in_schema=False)
 async def dashboard():
-    return FileResponse(static_dir / "index.html")
+    html = (static_dir / "index.html").read_text(encoding="utf-8")
+    enhancement = '<script type="module" src="/static/js/quant.js?v=30"></script>'
+    if enhancement not in html:
+        html = html.replace("</body>", f"{enhancement}\n</body>")
+    return HTMLResponse(html)
